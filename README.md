@@ -34,8 +34,17 @@
 
 # Result
 
-| Model | abs_rel | sq_rel | log_rms | \alpha |  d2  |  d3  |
-|:---:|:-------:|:------:|:-------:|:------:|:----:|:----:|
-| 왼쪽정렬  |  오른쪽정렬  |  중앙정렬  |d|   d    |
-| 왼쪽정렬  |  오른쪽정렬  |  중앙정렬  |d|   d    |
-| 왼쪽정렬  |  오른쪽정렬  |  중앙정렬  |d||
+- **KITTI(eigen split)**
+
+|     Model     | abs_rel&downarrow; | sq_rel&downarrow; | log_rms&downarrow; | &delta;1&uparrow; | &delta;2&uparrow; | &delta;3&uparrow; |
+|:-------------:|:------------------:|:-----------------:|:------------------:|:-----------------:|:-----------------:|:-----------------:|
+|  **ResUnet**  |       0.140        |       0.750       |       0.208        |       0.803       |       0.943       |       0.983       |
+| **ResUnet++** |         x          |         x         |         x          |         x         |         x         |         x         |
+
+
+- **NYU Depth V2**
+
+|     Model     | abs_rel&downarrow; | sq_rel&downarrow; | log_rms&downarrow; | &delta;1&uparrow; | &delta;2&uparrow; | &delta;3&uparrow; |
+|:-------------:|:------------------:|:-----------------:|:------------------:|:-----------------:|:-----------------:|:-----------------:|
+|  **ResUnet**  |         x          |         x         |         x          |         x         |         x         |         x         |
+| **ResUnet++** |         x          |         x         |         x          |         x         |         x         |         x         |
