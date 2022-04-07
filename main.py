@@ -19,7 +19,7 @@ import torch.utils.data
 import torch.utils.data.distributed
 from torch.utils.tensorboard import SummaryWriter
 
-from data.dataset import NYUV2Dataset
+from data.dataset_nyu import NYUV2Dataset
 from data.dataset_Kitti import KITTIDataset
 from models.resunet import ResUnet
 from models.resunet_plus import ResUnetPlusPlus
