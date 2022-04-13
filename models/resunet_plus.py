@@ -85,7 +85,7 @@ class ResUnetPlusPlus(nn.Module):
 
 if __name__ == "__main__":
     t = torch.randn(2, 3, 256, 256).cuda()
-    g = ResUnetPlusPlus(channel=3).cuda()
+    g = ResUnetPlusPlus(args=None, channel=3).cuda()
     parm = sum(p.numel() for p in g.parameters() if p.requires_grad)
     print(parm)
     print(g(t).size())
