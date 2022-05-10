@@ -61,4 +61,8 @@
 |   **ResUnet[13M]**    |       0.142        |        0.002         |       0.157        |       0.856       |       0.983       |       0.994       |
 | **ResUnet_uavs[11M]** |       0.180        |        0.002         |       0.191        |       0.743       |       0.971       |       0.993       |
 
-
+|         **Inputs**         |          **ResUnet**           |          **ResUnet_uavs**           |          **GT**           | 
+|:--------------------------:|:------------------------------:|:-----------------------------------:|:-------------------------:|
+| ![1](./outputs/rgb/7.png)  | ![1](./outputs/resunet/7.png)  | ![1](./outputs/resunet_uavs/7.png)  | ![1](./outputs/gt/7.png)  |
+| ![1](./outputs/rgb/8.png)  | ![1](./outputs/resunet/8.png)  | ![1](./outputs/resunet_uavs/8.png)  | ![1](./outputs/gt/8.png)  |
+| ![1](./outputs/rgb/39.png) | ![1](./outputs/resunet/39.png) | ![1](./outputs/resunet_uavs/39.png) | ![1](./outputs/gt/39.png) |
