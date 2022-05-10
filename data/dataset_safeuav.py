@@ -2,6 +2,8 @@
 NYU_depth_V2 Dataset
 https://github.com/cleinc/bts/blob/master/pytorch/bts_dataloader.py
 """
+import glob
+
 import numpy as np
 from PIL import Image
 import os
@@ -11,30 +13,28 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 
 
-class NYUV2Dataset(Dataset):
+class SafeUAVDataset(Dataset):
 
     def __init__(self, args, is_train=True):
-        super(NYUV2Dataset, self).__init__()
+        super(SafeUAVDataset, self).__init__()
         self.args = args
         self.is_train = is_train
 
         if is_train:
-            with open('/data1/NYU_depth_V2/nyudepthv2_train_files_with_gt.txt', 'r') as f:
-                self.filenames = f.readlines()
+            self.image_file = sorted(glob.glob(os.path.join('/data1/SafeUAV/urbA/train/image', '*.*')))
+            self.gt_file = sorted(glob.glob(os.path.join('/data1/SafeUAV/urbA/train/depth', '*.*')))
             self.transform = transforms.Compose([ToTensor(mode='train')])
 
         else:
-            with open('/data1/NYU_depth_V2/nyudepthv2_test_files_with_gt.txt', 'r') as f:
-                self.filenames = f.readlines()
+            self.image_file = sorted(glob.glob(os.path.join('/data1/SafeUAV/urbA/test/image', '*.*')))
+            self.gt_file = sorted(glob.glob(os.path.join('/data1/SafeUAV/urbA/test/depth', '*.*')))
             self.transform = transforms.Compose([ToTensor(mode='test')])
 
     def __getitem__(self, idx):
-        sample_path = self.filenames[idx] # (image, depth, focal)
-        focal = float(sample_path.split()[2])
 
         if self.is_train: # for Training
-            image_path = os.path.join('/data1/NYU_depth_V2/', 'train' + sample_path.split()[0])
-            depth_path = os.path.join('/data1/NYU_depth_V2/', 'train' + sample_path.split()[1])
+            image_path = self.image_file[idx]
+            depth_path = self.gt_file[idx]
 
             image = Image.open(image_path)
             depth_gt = Image.open(depth_path)
@@ -63,11 +63,12 @@ class NYUV2Dataset(Dataset):
             image, depth_gt = self.random_crop(image, depth_gt, self.args.input_height, self.args.input_width)
             image, depth_gt = self.train_preprocess(image, depth_gt)
 
-            sample = {'image': image, 'depth': depth_gt, 'focal': focal}
+            sample = {'image': image, 'depth': depth_gt}
 
         else: # for valid test
-            image_path = os.path.join('/data1/NYU_depth_V2/test', sample_path.split()[0])
-            depth_path = os.path.join('/data1/NYU_depth_V2/test', sample_path.split()[1])
+
+            image_path = self.image_file[idx]
+            depth_path = self.gt_file[idx]
 
             image = np.asarray(Image.open(image_path), dtype=np.float32) / 255.0
 
@@ -93,7 +94,7 @@ class NYUV2Dataset(Dataset):
                 if has_valid_depth:
                     depth_gt = depth_gt[top_margin:top_margin + 352, left_margin:left_margin + 1216, :]
 
-            sample = {'image': image, 'depth': depth_gt, 'focal': focal, 'has_valid_depth': has_valid_depth}
+            sample = {'image': image, 'depth': depth_gt, 'has_valid_depth': has_valid_depth}
 
         if self.transform:
             sample = self.transform(sample)
@@ -147,7 +148,7 @@ class NYUV2Dataset(Dataset):
         return image_aug
 
     def __len__(self):
-        return len(self.filenames)
+        return max(len(self.image_file), len(self.gt_file))
 
 
 def _is_pil_image(img):
@@ -164,20 +165,17 @@ class ToTensor(object):
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     def __call__(self, sample):
-        image, focal = sample['image'], sample['focal']
+        image = sample['image']
         image = self.to_tensor(image)
         image = self.normalize(image)
-
-        # if self.mode == 'test':
-        #     return {'image': image, 'focal': focal}
 
         depth = sample['depth']
         if self.mode == 'train':
             depth = self.to_tensor(depth)
-            return {'image': image, 'depth': depth, 'focal': focal}
+            return {'image': image, 'depth': depth}
         else:
             has_valid_depth = sample['has_valid_depth']
-            return {'image': image, 'depth': depth, 'focal': focal, 'has_valid_depth': has_valid_depth}
+            return {'image': image, 'depth': depth, 'has_valid_depth': has_valid_depth}
 
     def to_tensor(self, pic):
         if not (_is_pil_image(pic) or _is_numpy_image(pic)):
@@ -209,3 +207,10 @@ class ToTensor(object):
             return img.float()
         else:
             return img
+
+
+
+
+
+
+

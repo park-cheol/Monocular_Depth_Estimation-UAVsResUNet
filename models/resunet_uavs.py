@@ -1,11 +1,13 @@
-import torch
 import torch.nn as nn
-from models.modules import ResidualConv, Upsample
+import torch
+
+from models.modules import *
+from models.attention import *
 
 
-class ResUnet(nn.Module):
+class ResUnetUAVs(nn.Module):
     def __init__(self, args, channel, filters=[64, 128, 256, 512]):
-        super(ResUnet, self).__init__()
+        super(ResUnetUAVs, self).__init__()
         self.args = args
 
         self.input_layer = nn.Sequential(
@@ -17,11 +19,16 @@ class ResUnet(nn.Module):
         self.input_skip = nn.Sequential(
             nn.Conv2d(channel, filters[0], kernel_size=3, padding=1)
         )
+        self.squeeze_excite0 = Squeeze_Excite_Block(filters[0])
 
-        self.residual_conv_1 = ResidualConv(filters[0], filters[1], 2, 1)
-        self.residual_conv_2 = ResidualConv(filters[1], filters[2], 2, 1)
+        self.residual_conv_1 = ResidualDepthwiseConv(filters[0], filters[1], 2, 1)
+        self.squeeze_excite1 = Squeeze_Excite_Block(filters[1])
+        self.residual_conv_2 = ResidualDepthwiseConv(filters[1], filters[2], 2, 1)
+        self.squeeze_excite2 = Squeeze_Excite_Block(filters[2])
 
-        self.bridge = ResidualConv(filters[2], filters[3], 2, 1)
+        self.bridge = ResidualDepthwiseConv(filters[2], filters[3], 2, 1)
+        self.attn = Attention(dim=filters[3], heads=8)
+        self.aspp = ASPP(filters[3], out_channels=filters[3])
 
         self.upsample_1 = Upsample(filters[3], filters[3], 2, 2)
         self.up_residual_conv1 = ResidualConv(filters[3] + filters[2], filters[2], 1, 1)
@@ -40,10 +47,17 @@ class ResUnet(nn.Module):
     def forward(self, x):
         # Encode
         x1 = self.input_layer(x) + self.input_skip(x)
+        x1 = self.squeeze_excite0(x1)
+
         x2 = self.residual_conv_1(x1)
+        x2 = self.squeeze_excite1(x2)
+
         x3 = self.residual_conv_2(x2)
+        x3 = self.squeeze_excite2(x3)
         # Bridge
         x4 = self.bridge(x3)
+        x4 = self.attn(x4)
+        x4 = self.aspp(x4)
         # Decode
         x4 = self.upsample_1(x4)
         x5 = torch.cat([x4, x3], dim=1)
@@ -67,7 +81,7 @@ class ResUnet(nn.Module):
 
 if __name__ == "__main__":
     t = torch.randn(2, 3, 256, 256).cuda()
-    g = ResUnet(args=None, channel=3).cuda()
+    g = ResUnetUAVs(args=None, channel=3).cuda()
     parm = sum(p.numel() for p in g.parameters() if p.requires_grad)
     print(parm)
     print(g(t).size())

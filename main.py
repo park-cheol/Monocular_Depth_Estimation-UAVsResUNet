@@ -6,6 +6,7 @@ import time
 import warnings
 import numpy as np
 from tqdm import tqdm
+from collections import OrderedDict
 
 import torch.optim
 import torch.backends.cudnn as cudnn
@@ -19,10 +20,13 @@ import torch.utils.data
 import torch.utils.data.distributed
 from torch.utils.tensorboard import SummaryWriter
 
+from data.dataset_safeuav import SafeUAVDataset
 from data.dataset_nyu import NYUV2Dataset
 from data.dataset_Kitti import KITTIDataset
+from models.unet import Unet
 from models.resunet import ResUnet
 from models.resunet_plus import ResUnetPlusPlus
+from models.resunet_uavs import ResUnetUAVs
 from utils.losses import *
 from utils.metrics import compute_errors
 from utils.utils import DistributedSamplerNoEvenlyDivisible
@@ -31,7 +35,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--start-epoch", type=int, default=0, help="epoch to start training from")
 parser.add_argument("--epochs", type=int, default=80, help="number of epochs of training")
 parser.add_argument('--data', default='./datasets', help='path to images')
-parser.add_argument('--dataset-name', default='nyu', choices=['kitti', 'nyu'], help='path to images')
+parser.add_argument('--dataset-name', default='safeuav', choices=['kitti', 'nyu', 'safeuav'], help='path to images')
 parser.add_argument("--batch-size", type=int, default=64, help="size of the batches")
 
 parser.add_argument("-j", "--workers", type=int, default=4, help="number of cpu threads to use during batch generation")
@@ -50,7 +54,7 @@ parser.add_argument('--degree', type=float, default=2.5, help='random rotation m
 parser.add_argument('--do-kb-crop', action='store_true', help='if set, crop input images as kitti benchmark images')
 
 # model option
-parser.add_argument('--model', type=str, default='resunet_plus', choices=['resunet', 'resunet_plus'], help='Backbone Model[resunet or resunet_plus]')
+parser.add_argument('--model', type=str, default='resunet_plus', choices=['unet', 'resunet', 'resunet_plus', 'resunet_uavs'], help='Backbone Model[resunet or resunet_plus]')
 parser.add_argument('--variance-focus', type=float, default=0.85, help='lambda in paper: [0, 1], higher value more focus on minimizing variance of error')
 parser.add_argument('--max-depth', type=float, default=10, help='maximum depth in estimation')
 parser.add_argument('--min-depth-eval', type=float, default=1e-3, help='minimum depth for evaluation')
@@ -135,9 +139,13 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # create models
     if args.model == 'resunet_plus':
-        model = ResUnetPlusPlus(args=args, channel=args.in_channels)
+        model = ResUnetPlusPlus(args=args, channel=args.in_channels)  # 14.5M
     elif args.model == 'resunet':
-        model = ResUnet(args=args, channel=args.in_channels)
+        model = ResUnet(args=args, channel=args.in_channels)  # 13M
+    elif args.model == 'resunet_uavs':
+        model = ResUnetUAVs(args=args, channel=args.in_channels)  # 17.5M
+    elif args.model == 'unet':
+        model = Unet(args=args, channel=args.in_channels)  # 5.2M
     else:
         raise Exception('model error')
 
@@ -163,7 +171,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         else:
             model.cuda()
-            # DistributedDataParallel will divide and allocate batch_size to all
+            # DistributedDataParallel w`ill divide and allocate batch_size to all
             # available GPUs if device_ids are not set
             model = torch.nn.parallel.DistributedDataParallel(model)
 
@@ -220,6 +228,9 @@ def main_worker(gpu, ngpus_per_node, args):
     elif args.dataset_name == 'kitti':
         train_dataset = KITTIDataset(args=args, is_train=True)
         test_dataset = KITTIDataset(args=args, is_train=False)
+    elif args.dataset_name == 'safeuav':
+        train_dataset = SafeUAVDataset(args=args, is_train=True)
+        test_dataset = SafeUAVDataset(args=args, is_train=False)
     else:
         raise Exception("no have dataset")
     # Sampler

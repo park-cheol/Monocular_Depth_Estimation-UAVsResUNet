@@ -24,11 +24,15 @@
 
 - **Train(Distributed Training)**
   - **KITTI**
-    > **python main.py --dist-url tcp://127.0.0.1:18214 --world-size 1 --rank 0 --multiprocessing-distributed --max-depth 80 --do-random-rotate --degree 1.0 --min-depth-eval 1e-3 --max-depth-eval 80 --max-depth 80 --eigen-crop --batch-size 8 --dataset-name kitti --garg-crop --do-kb-crop
+    > **python main.py --do-random-rotate --degree 1.0 --min-depth-eval 1e-3 --max-depth-eval 80 --max-depth 80 --eigen-crop --batch-size 8 --dataset-name kitti --garg-crop --do-kb-crop
     --input-height 352 --input-width 704**
     
   - **NYU Depth V2**
-    > **python main.py --dist-url tcp://127.0.0.1:18214 --world-size 1 --rank 0 --multiprocessing-distributed --max-depth 10 --do-random-rotate --degree 2.5 --min-depth-eval 1e-3 --max-depth-eval 10 --max-depth 10 --eigen-crop --batch-size 16
+    > **python main.py --do-random-rotate --degree 2.5 --min-depth-eval 1e-3 --max-depth-eval 10 --max-depth 10 --eigen-crop --batch-size 16 --dataset-name nyu 
+    --input-height 416 --input-width 544**
+    
+  - **SafeUAV**
+    > **python main.py --do-random-rotate --degree 2.5 --min-depth-eval 30 --max-depth-eval 90 --max-depth 90 --eigen-crop --batch-size 2 --dataset-name safeuav 
     --input-height 416 --input-width 544**
 
 
@@ -48,3 +52,13 @@
 |:-------------:|:------------------:|:-----------------:|:------------------:|:-----------------:|:-----------------:|:-----------------:|
 |  **ResUnet**  |         x          |         x         |         x          |         x         |         x         |         x         |
 | **ResUnet++** |         x          |         x         |         x          |         x         |         x         |         x         |
+
+
+- **SafeUAV**
+
+|         Model         | abs_rel&downarrow; |  sq_rel&downarrow;   | log_rms&downarrow; | &delta;1&uparrow; | &delta;2&uparrow; | &delta;3&uparrow; |
+|:---------------------:|:------------------:|:--------------------:|:------------------:|:-----------------:|:-----------------:|:-----------------:|
+|   **ResUnet[13M]**    |       0.142        |        0.002         |       0.157        |       0.856       |       0.983       |       0.994       |
+| **ResUnet_uavs[11M]** |       0.180        |        0.002         |       0.191        |       0.743       |       0.971       |       0.993       |
+
+

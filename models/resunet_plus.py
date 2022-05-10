@@ -11,7 +11,7 @@ class ResUnetPlusPlus(nn.Module):
         self.input_layer = nn.Sequential(
             nn.Conv2d(channel, filters[0], kernel_size=3, padding=1),
             nn.BatchNorm2d(filters[0]),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(filters[0], filters[0], kernel_size=3, padding=1),
         )
         self.input_skip = nn.Sequential(
